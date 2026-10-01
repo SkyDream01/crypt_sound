@@ -1,0 +1,307 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only; see LICENSE. Provided without warranty. -->
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1219">
+  <title>Crypt Sound · 本地音轨工作台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --night: #0b1219;
+      --panel: #121d26;
+      --panel-raised: #182630;
+      --line: #2a3c48;
+      --ink: #edf4f5;
+      --muted: #9aadb7;
+      --dim: #70848f;
+      --mint: #65dfc5;
+      --amber: #ffb05e;
+      --coral: #ff8276;
+      --mono: "Cascadia Mono", "Consolas", monospace;
+      --sans: "Bahnschrift", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 82% 4%, rgba(48, 113, 112, .16), transparent 30rem),
+        linear-gradient(180deg, #0b1219 0%, #0c151d 65%, #101922 100%);
+      font: 15px/1.65 var(--sans);
+    }
+    button, input { font: inherit; }
+    .shell { width: min(1080px, calc(100% - 40px)); margin: 0 auto; }
+    .masthead {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 82px; border-bottom: 1px solid rgba(151, 177, 188, .17);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; letter-spacing: .02em; }
+    .brand-mark {
+      display: grid; place-items: center; width: 38px; height: 38px;
+      border: 1px solid rgba(101, 223, 197, .45); border-radius: 11px;
+      color: var(--mint); background: rgba(101, 223, 197, .07);
+    }
+    .brand-name { font-size: 15px; font-weight: 700; }
+    .brand-sub { display: block; margin-top: -3px; color: var(--dim); font: 10px/1.5 var(--mono); letter-spacing: .12em; }
+    .local-badge {
+      display: inline-flex; align-items: center; gap: 8px; color: #b8c9ce;
+      font: 10px var(--mono); letter-spacing: .12em; text-transform: uppercase;
+    }
+    .local-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px rgba(101, 223, 197, .7); }
+    main { padding: 40px 0 54px; }
+    .hero {
+      display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 36px;
+      align-items: center; padding: 23px 0 36px;
+    }
+    .eyebrow, .card-kicker, .field-label, .token-kicker {
+      color: var(--mint); font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase;
+    }
+    h1 {
+      margin: 11px 0 13px; max-width: 780px; font-size: clamp(36px, 5.5vw, 59px);
+      font-weight: 620; letter-spacing: -.045em; line-height: 1.08;
+    }
+    h1 em { color: var(--mint); font-family: Georgia, "Times New Roman", serif; font-weight: 400; letter-spacing: -.035em; }
+    .hero-copy > p:last-child { max-width: 650px; margin: 0; color: var(--muted); font-size: 15px; }
+    .signal-panel {
+      justify-self: end; width: 164px; padding: 16px 14px 12px;
+      border: 1px solid var(--line); border-radius: 13px; background: rgba(18, 29, 38, .72);
+    }
+    .signal-bars { height: 53px; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+    .signal-bars i { display: block; width: 5px; border-radius: 5px; background: var(--mint); opacity: .86; }
+    .signal-bars i:nth-child(6n+1) { background: var(--amber); }
+    .signal-caption { display: flex; justify-content: space-between; margin-top: 9px; color: var(--dim); font: 9px var(--mono); letter-spacing: .07em; }
+    .token-row {
+      display: grid; grid-template-columns: minmax(210px, 1fr) 2fr; gap: 15px 26px;
+      align-items: center; margin: 0 0 22px; padding: 15px 18px;
+      border: 1px solid var(--line); border-radius: 11px; background: rgba(18, 29, 38, .7);
+    }
+    .token-copy strong { display: block; font-size: 13px; font-weight: 600; }
+    .token-copy small { color: var(--dim); font-size: 11px; }
+    .token-control { position: relative; }
+    .token-control input, .key-control input {
+      width: 100%; min-height: 43px; padding: 10px 13px; color: var(--ink);
+      border: 1px solid #344a56; border-radius: 7px; outline: none; background: #0d171f;
+    }
+    input::placeholder { color: #667c88; }
+    input:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible, .dropzone:focus-within {
+      outline: 2px solid var(--mint); outline-offset: 3px;
+    }
+    .workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .file-card {
+      position: relative; overflow: hidden; padding: 23px 24px 22px;
+      border: 1px solid var(--line); border-radius: 13px; background: linear-gradient(145deg, rgba(21, 34, 44, .98), rgba(17, 27, 36, .98));
+    }
+    .file-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--mint); }
+    .decode-card::before { background: var(--amber); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .card-kicker { color: var(--mint); }
+    .decode-card .card-kicker { color: var(--amber); }
+    h2 { margin: 4px 0 3px; font-size: 23px; line-height: 1.25; letter-spacing: -.025em; }
+    .card-intro { min-height: 49px; margin: 5px 0 17px; color: var(--muted); font-size: 12px; }
+    .tag { padding: 4px 8px; border: 1px solid #334650; border-radius: 20px; color: #a6bac0; font: 9px var(--mono); letter-spacing: .08em; white-space: nowrap; }
+    .field-label { display: block; margin: 15px 0 7px; color: #b7c7cc; font-size: 9px; }
+    .dropzone {
+      position: relative; display: grid; min-height: 119px; place-items: center;
+      align-content: center; gap: 3px; padding: 15px;
+      border: 1px dashed #47606a; border-radius: 9px; background: rgba(7, 15, 21, .36);
+      text-align: center; cursor: pointer; transition: border-color .16s ease, background .16s ease;
+    }
+    .dropzone:hover, .dropzone.drag-over { border-color: var(--mint); background: rgba(101, 223, 197, .055); }
+    .decode-card .dropzone:hover, .decode-card .dropzone.drag-over { border-color: var(--amber); background: rgba(255, 176, 94, .055); }
+    .file-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .drop-icon { display: grid; place-items: center; width: 26px; height: 26px; margin-bottom: 3px; border-radius: 7px; color: var(--mint); background: rgba(101, 223, 197, .11); font: 19px/1 var(--mono); }
+    .decode-card .drop-icon { color: var(--amber); background: rgba(255, 176, 94, .11); }
+    .drop-title { color: #e0e9eb; font-size: 12px; font-weight: 600; }
+    .drop-hint { color: var(--dim); font-size: 10px; }
+    .selected-file { overflow: hidden; max-width: 100%; color: #c1d2d5; font: 10px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+    .key-control { position: relative; }
+    .key-control input { padding-right: 92px; }
+    .key-control::after { content: "此页临时使用"; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: var(--dim); font-size: 9px; pointer-events: none; }
+    .key-note { display: block; margin-top: 6px; color: var(--dim); font-size: 10px; }
+    .submit-row { display: flex; align-items: center; gap: 12px; margin-top: 17px; }
+    .submit-button {
+      min-height: 43px; padding: 9px 16px; border: 0; border-radius: 7px;
+      color: #09201d; background: var(--mint); font-weight: 700; cursor: pointer;
+      transition: transform .16s ease, filter .16s ease;
+    }
+    .decode-card .submit-button { color: #23170b; background: var(--amber); }
+    .submit-button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.07); }
+    .submit-button:disabled { opacity: .48; cursor: wait; }
+    .submit-arrow { margin-left: 12px; font: 16px var(--mono); }
+    .progress-wrap { flex: 1; min-width: 90px; }
+    progress { width: 100%; height: 4px; appearance: none; border: 0; border-radius: 8px; background: #263943; }
+    progress::-webkit-progress-bar { border-radius: 8px; background: #263943; }
+    progress::-webkit-progress-value { border-radius: 8px; background: var(--mint); }
+    .decode-card progress::-webkit-progress-value { background: var(--amber); }
+    progress::-moz-progress-bar { border-radius: 8px; background: var(--mint); }
+    .decode-card progress::-moz-progress-bar { background: var(--amber); }
+    .progress-label { margin: 2px 0 0; color: var(--dim); font: 9px var(--mono); }
+    .form-status { min-height: 20px; margin: 10px 0 0; color: var(--muted); font-size: 11px; }
+    .form-status.error { color: var(--coral); }
+    .download-link { display: inline-block; margin-top: 2px; color: var(--mint); font-size: 11px; text-underline-offset: 3px; }
+    .decode-card .download-link { color: var(--amber); }
+    .warning-strip {
+      display: flex; gap: 12px; margin: 18px 0 0; padding: 12px 15px;
+      border: 1px solid rgba(255, 130, 118, .24); border-radius: 9px;
+      color: #c7b7b2; background: rgba(91, 43, 40, .14); font-size: 11px;
+    }
+    .warning-mark { flex: 0 0 auto; color: var(--coral); font: 13px var(--mono); }
+    .live-section { margin-top: 29px; border-top: 1px solid rgba(151, 177, 188, .17); }
+    .live-section summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 2px; color: #c6d3d6; cursor: pointer; list-style: none; }
+    .live-section summary::-webkit-details-marker { display: none; }
+    .live-title { font-weight: 650; }
+    .live-subtitle { margin-left: 10px; color: var(--dim); font-size: 11px; font-weight: 400; }
+    .live-toggle { color: var(--mint); font: 12px var(--mono); }
+    .live-section[open] .live-toggle { transform: rotate(45deg); }
+    .live-content { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 20px; padding: 0 0 22px; }
+    .live-content ol { margin: 0; padding: 16px 19px 16px 36px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: rgba(18, 29, 38, .58); font-size: 12px; }
+    .live-content li + li { margin-top: 8px; }
+    .live-console { padding: 16px; border: 1px solid var(--line); border-radius: 9px; background: rgba(18, 29, 38, .58); }
+    .live-console label { display: block; margin-bottom: 7px; color: #b7c7cc; font-size: 11px; }
+    .live-console input { width: 100%; min-height: 40px; padding: 8px 11px; border: 1px solid #344a56; border-radius: 6px; outline: none; color: var(--ink); background: #0d171f; }
+    .live-actions { display: flex; gap: 8px; margin-top: 13px; }
+    .live-actions button { min-height: 39px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: #21333e; cursor: pointer; }
+    .live-actions #start { color: #09201d; border-color: transparent; background: var(--mint); font-weight: 700; }
+    .live-actions button:disabled { opacity: .42; cursor: default; }
+    #status { min-height: 39px; margin: 12px 0 0; padding: 9px 11px; border-radius: 6px; color: #b9c9ce; background: #0b151c; font-size: 11px; white-space: pre-wrap; }
+    .live-note { margin: 9px 0 0; color: var(--dim); font-size: 10px; }
+    footer { display: flex; justify-content: space-between; gap: 18px; padding: 15px 0 0; border-top: 1px solid rgba(151, 177, 188, .12); color: var(--dim); font: 9px var(--mono); letter-spacing: .045em; }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; gap: 20px; }
+      .signal-panel { display: none; }
+      .workflow-grid { grid-template-columns: 1fr; }
+      .live-content { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .shell { width: min(100% - 26px, 1080px); }
+      .masthead { min-height: 69px; }
+      main { padding-top: 24px; }
+      .hero { padding: 17px 0 25px; }
+      h1 { font-size: clamp(34px, 11vw, 46px); }
+      .token-row { grid-template-columns: 1fr; gap: 9px; padding: 13px; }
+      .file-card { padding: 20px 17px 18px; }
+      .card-intro { min-height: 0; }
+      .live-subtitle { display: block; margin: 2px 0 0; }
+      footer { flex-direction: column; gap: 4px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="masthead">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="23" height="20" viewBox="0 0 23 20" fill="none"><path d="M1 10h2l2-6 3 13 3-15 3 12 2-7 2 3h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <span><span class="brand-name">Crypt Sound</span><span class="brand-sub">CS2 · LOCAL AUDIO DESK</span></span>
+      </div>
+      <span class="local-badge">只在本机处理</span>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow">音轨处理台 / FILE WORKSPACE</p>
+          <h1 id="page-title">让音轨换一种方式，<br><em>再在本机还原。</em></h1>
+          <p>选取音频或视频，输入自己的音轨密钥。文件在这台电脑上处理，完成后可直接下载结果。</p>
+        </div>
+        <div class="signal-panel" aria-label="双声道 48 千赫信号示意">
+          <div class="signal-bars" aria-hidden="true">
+            <i style="height:18%"></i><i style="height:35%"></i><i style="height:25%"></i><i style="height:64%"></i><i style="height:42%"></i><i style="height:88%"></i><i style="height:53%"></i><i style="height:72%"></i><i style="height:28%"></i><i style="height:50%"></i><i style="height:35%"></i><i style="height:20%"></i><i style="height:63%"></i><i style="height:43%"></i><i style="height:25%"></i><i style="height:48%"></i><i style="height:31%"></i><i style="height:17%"></i>
+          </div>
+          <div class="signal-caption"><span>STEREO</span><span>48 kHz</span></div>
+        </div>
+      </section>
+
+      <section class="token-row" aria-label="本地服务访问设置">
+        <div class="token-copy"><strong>本地访问令牌</strong><small>从启动服务的终端复制；通过带令牌的链接打开时会自动填入。</small></div>
+        <div class="token-control"><input id="token" type="password" autocomplete="off" spellcheck="false" aria-label="本地访问令牌" placeholder="粘贴终端显示的本地令牌"></div>
+      </section>
+
+      <section class="workflow-grid" aria-label="文件加密与解密">
+        <form class="file-card encode-card" id="encrypt-form" data-mode="encode">
+          <div class="card-top">
+            <div><p class="card-kicker">CS2 / ENCODE</p><h2>文件加密</h2></div>
+            <span class="tag">音轨扰乱</span>
+          </div>
+          <p class="card-intro">生成经过时间扩散与频谱扰乱的 CS2 音轨。MP4/MKV 保留画面并替换音轨；音频文件输出 WAV。</p>
+          <label class="field-label" for="encrypt-file">来源文件</label>
+          <label class="dropzone" for="encrypt-file" id="encrypt-drop">
+            <input class="file-input" id="encrypt-file" type="file" accept="audio/*,video/*,.mkv,.mp4,.wav" required>
+            <span class="drop-icon" aria-hidden="true">↑</span>
+            <span class="drop-title" id="encrypt-file-label">拖入文件，或点击选择</span>
+            <span class="drop-hint">音频与视频 · 最大 2 GB</span>
+            <span class="selected-file" id="encrypt-file-meta">尚未选择文件</span>
+          </label>
+          <label class="field-label" for="encrypt-key">音轨密钥</label>
+          <div class="key-control"><input id="encrypt-key" type="password" maxlength="1024" autocomplete="new-password" required placeholder="设置用于恢复的密钥"></div>
+          <small class="key-note">解密时输入相同密钥。密钥不会写入输出文件。</small>
+          <div class="submit-row">
+            <button class="submit-button" type="submit">开始加密<span class="submit-arrow" aria-hidden="true">↗</span></button>
+            <div class="progress-wrap" id="encrypt-progress-wrap" hidden><progress id="encrypt-progress" max="100" value="0"></progress><p class="progress-label" id="encrypt-progress-label"></p></div>
+          </div>
+          <p class="form-status" id="encrypt-status" role="status" aria-live="polite">选择文件并填写密钥即可开始。</p>
+          <a class="download-link" id="encrypt-download" hidden></a>
+        </form>
+
+        <form class="file-card decode-card" id="decrypt-form" data-mode="decode">
+          <div class="card-top">
+            <div><p class="card-kicker">CS2 / DECODE</p><h2>文件解密</h2></div>
+            <span class="tag">恢复 WAV</span>
+          </div>
+          <p class="card-intro">扫描文件中的 CS2 同步信号，恢复出立体声音频 WAV。视频画面不会复制到结果中。</p>
+          <label class="field-label" for="decrypt-file">扰乱后的文件</label>
+          <label class="dropzone" for="decrypt-file" id="decrypt-drop">
+            <input class="file-input" id="decrypt-file" type="file" accept="audio/*,video/*,.mkv,.mp4,.wav" required>
+            <span class="drop-icon" aria-hidden="true">↓</span>
+            <span class="drop-title" id="decrypt-file-label">拖入文件，或点击选择</span>
+            <span class="drop-hint">音频与视频 · 最大 2 GB</span>
+            <span class="selected-file" id="decrypt-file-meta">尚未选择文件</span>
+          </label>
+          <label class="field-label" for="decrypt-key">音轨密钥</label>
+          <div class="key-control"><input id="decrypt-key" type="password" maxlength="1024" autocomplete="new-password" required placeholder="输入加密时使用的密钥"></div>
+          <small class="key-note">错误密钥不会报错认证失败，只会生成另一种声音。</small>
+          <div class="submit-row">
+            <button class="submit-button" type="submit">开始解密<span class="submit-arrow" aria-hidden="true">↗</span></button>
+            <div class="progress-wrap" id="decrypt-progress-wrap" hidden><progress id="decrypt-progress" max="100" value="0"></progress><p class="progress-label" id="decrypt-progress-label"></p></div>
+          </div>
+          <p class="form-status" id="decrypt-status" role="status" aria-live="polite">选择文件并填写密钥即可开始。</p>
+          <a class="download-link" id="decrypt-download" hidden></a>
+        </form>
+      </section>
+
+      <aside class="warning-strip">
+        <span class="warning-mark" aria-hidden="true">!</span>
+        <span><strong>安全说明：</strong>CS2 是可转码恢复的音轨扰乱实验，不是 AES 等密码学加密。每秒音量、静音位置和重复内容仍可能泄漏，请勿用于保护敏感或机密内容。</span>
+      </aside>
+
+      <details class="live-section" id="live-decode">
+        <summary><span><span class="live-title">实时标签页解码</span><span class="live-subtitle">从浏览器捕获正在播放的扰乱音轨</span></span><span class="live-toggle" aria-hidden="true">＋</span></summary>
+        <div class="live-content">
+          <ol>
+            <li>用 Chrome 或 Edge 播放已编码视频，保持 1 倍速、音量 100%。</li>
+            <li>输入音轨密钥，开始后选择视频所在的浏览器标签页并共享标签页音频。</li>
+            <li>不要共享整个桌面或本解码页；先调低系统音量，确认恢复后再调高。</li>
+          </ol>
+          <div class="live-console">
+            <label for="key">音轨密钥</label>
+            <input id="key" type="password" autocomplete="new-password" placeholder="输入加密时使用的密钥">
+            <div class="live-actions"><button id="start" type="button">选择标签页并解码</button><button id="stop" type="button" disabled>停止</button></div>
+            <p id="status" role="status" aria-live="polite">等待启动</p>
+            <p class="live-note">实时恢复约有 1–2 秒启动延迟，画面不会自动延后。停止共享或关闭本页会结束解码。</p>
+          </div>
+        </div>
+      </details>
+    </main>
+    <footer><span>CRYPT SOUND · CS2 PROTOTYPE</span><span>FFmpeg + 本机音频处理</span></footer>
+  </div>
+  <script src="/client.js"></script>
+</body>
+</html>
