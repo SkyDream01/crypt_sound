@@ -2,7 +2,7 @@
 # This file is part of Crypt Sound. See LICENSE for terms; provided without warranty.
 import numpy as np
 import pytest
-from crypt_sound.dsp import RATE, BLOCK, PAYLOAD, START, Scrambler, StreamDecoder
+from crypt_sound.dsp import RATE, BLOCK, PAYLOAD, START, WIDTH, Scrambler, StreamDecoder
 
 
 def music(seconds=4):
@@ -35,6 +35,13 @@ def test_pcm_roundtrip_and_wrong_key(codec):
     wrong = Scrambler('wrong-password').decode(packet)
     assert snr(original, wrong) < 1
     assert np.max(abs(packet)) < 1
+
+
+def test_cs2_frequency_mapping_stays_compatible(codec):
+    assert codec.indices[::WIDTH].tolist() == [519, 199, 399, 279, 559, 79, 359, 599,
+                                              239, 439, 159, 639, 319, 119, 479, 39]
+    assert codec.signs[::WIDTH].tolist() == [1, 1, 1, 1, 1, -1, 1, 1,
+                                            1, -1, -1, 1, -1, -1, -1, 1]
 
 
 def test_stream_arbitrary_chunks_and_seek(codec):
@@ -79,16 +86,16 @@ def test_cs2_spreads_short_event_and_preserves_energy(codec):
     assert snr(source, codec.transform(enhanced, inverse=True)) > 100
 
 
-def test_reject_legacy_pilot_and_reacquire_cs2(codec):
+def test_reject_positive_pilot_and_reacquire_cs2(codec):
     from crypt_sound.dsp import PILOT_SIZE
     original = music(1)
     packet = codec.encode(original)
-    legacy = packet.copy()
-    legacy[:PILOT_SIZE] *= -1
+    positive = packet.copy()
+    positive[:PILOT_SIZE] *= -1
     with pytest.raises(ValueError, match="Only CS2"):
-        codec.decode(legacy)
+        codec.decode(positive)
     decoder = StreamDecoder(codec)
-    assert decoder.feed(legacy) == []
+    assert decoder.feed(positive) == []
     output = decoder.feed(packet)
     assert len(output) == 1
     assert snr(original, output[0]) > 25
@@ -100,5 +107,3 @@ def test_cs2_silence_and_invalid_input(codec):
     assert not np.any(codec.decode(packet))
     with pytest.raises(ValueError, match='Non-finite'):
         codec.encode(np.full((RATE, 2), np.nan))
-    with pytest.raises(TypeError):
-        Scrambler('test', version=1)

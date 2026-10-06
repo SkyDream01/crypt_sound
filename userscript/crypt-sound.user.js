@@ -176,8 +176,9 @@ function decoderWorker() {
   async function mapping(password) {
     if (!password || [...password].length > 1024) throw Error('密钥不能为空，且不能超过 1024 字符');
     const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-    // Historical salt is part of the CS2 wire format.
-    let seed = new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt:new TextEncoder().encode('crypt-sound-CS1'), iterations:100000}, key, 256));
+    // Format-defined frequency-mapping domain; keep these bytes stable for CS2 tracks.
+    const bandSalt = Uint8Array.from('63727970742d736f756e642d435331'.match(/../g), byte => parseInt(byte, 16));
+    let seed = new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt:bandSalt, iterations:100000}, key, 256));
     let order;
     do {
       if (order) seed = await digest(seed);

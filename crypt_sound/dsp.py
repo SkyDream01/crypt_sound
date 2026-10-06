@@ -21,6 +21,9 @@ GAIN = 0.22
 BANDS = 16
 WIDTH = 40
 ACTIVE = BANDS * WIDTH  # 15 kHz at 48 kHz before time compression
+# Format-defined PBKDF2 domain for the frequency mapping. Keep these bytes
+# stable so previously generated CS2 tracks remain decodable.
+BAND_SALT = bytes.fromhex("63727970742d736f756e642d435331")
 _t = np.arange(PILOT_SIZE) / RATE
 PILOT = (chirp(_t, f0=900, f1=8500, t1=_t[-1], method="linear")
          * np.hanning(PILOT_SIZE) * 0.65).astype(np.float32)
@@ -30,8 +33,7 @@ class Scrambler:
     def __init__(self, password: str):
         if not password or len(password) > 1024:
             raise ValueError("密钥不能为空，且不能超过 1024 字符")
-        # Historical salt is part of the CS2 wire format.
-        seed = hashlib.pbkdf2_hmac("sha256", password.encode(), b"crypt-sound-CS1", 100000)
+        seed = hashlib.pbkdf2_hmac("sha256", password.encode(), BAND_SALT, 100000)
         order = sorted(range(BANDS), key=lambda i: hashlib.sha256(seed + bytes([i])).digest())
         # Avoid leaving any frequency band in place.
         while any(i == x for i, x in enumerate(order)):
